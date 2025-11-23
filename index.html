@@ -126,10 +126,9 @@
     const gameoverScreen = document.getElementById('gameover');
     const btnUlta = document.getElementById('btn-ulta');
 
-    // Аудио
+    // Аудио (Оставил только музыку и редкие звуки)
     const musicMenu = new Audio('audio/music_menu.mp3'); musicMenu.loop = true;
     const musicGame = new Audio('audio/music_game.mp3'); musicGame.loop = true; musicGame.volume = 0.6;
-    const sfxShoot = new Audio('audio/shoot.mp3');
     const sfxGameOver = new Audio('audio/gameover.mp3');
     const sfxClick = new Audio('audio/knok.mp3');
     const sfxUlta = new Audio('audio/ulta.mp3');
@@ -263,7 +262,7 @@
     function shoot() {
         if(gameState !== 'game') return;
         bullets.push({ x: player.x + player.w/2 - 15, y: player.y, w: 30, h: 30, dx: 0, dy: -10 });
-        playSound(sfxShoot);
+        // playSound(sfxShoot); -- УБРАЛИ ДЛЯ СКОРОСТИ
         tg.HapticFeedback.impactOccurred('light');
     }
 
@@ -342,7 +341,6 @@
     function update() {
         ctx.clearRect(0, 0, width, height);
 
-        // Фон
         if(images['bg_game']) ctx.drawImage(images['bg_game'], 0, 0, width, height);
 
         // Мусор (Статичный)
