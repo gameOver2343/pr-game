@@ -9,18 +9,22 @@
         body { margin: 0; overflow: hidden; background: #000; touch-action: none; user-select: none; -webkit-user-select: none; font-family: 'Courier New', Courier, monospace; }
         canvas { display: block; width: 100%; height: 100%; }
         
+        /* Общие стили */
         .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; z-index: 10; }
         .hidden { display: none !important; }
 
+        /* МЕНЮ */
         #menu-screen { background: rgba(0,0,0,0.6); }
         h1 { color: #fff; font-size: 40px; text-transform: uppercase; text-shadow: 4px 4px 0 #ff0055; margin-bottom: 10px; }
         .subtitle { color: #00ccff; font-size: 16px; margin-bottom: 40px; text-shadow: 1px 1px 0 #000; }
         
+        /* СЮЖЕТ */
         #story-screen { background: rgba(20, 0, 10, 0.95); padding: 20px; box-sizing: border-box; }
         .story-box { border: 2px solid #fff; padding: 20px; background: #000; box-shadow: 5px 5px 0 #ff0055; max-width: 90%; }
         .story-text { color: #fff; font-size: 18px; line-height: 1.5; margin-bottom: 20px; text-align: left; }
         .virus-icon { width: 80px; margin-bottom: 20px; animation: shake 0.5s infinite; }
 
+        /* ИГРОВОЙ ИНТЕРФЕЙС */
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none; }
         #score-box { position: absolute; top: 20px; left: 20px; color: #fff; font-size: 24px; font-weight: bold; text-shadow: 2px 2px 0 #ff00ff; }
         #lives-box { position: absolute; top: 20px; right: 20px; color: #ff0055; font-size: 24px; font-weight: bold; text-shadow: 2px 2px 0 #fff; letter-spacing: 5px; }
@@ -58,12 +62,14 @@
 
     <canvas id="gameCanvas"></canvas>
 
+    <!-- МЕНЮ -->
     <div id="menu-screen" class="screen">
         <h1>CYBER<br>DEFENSE</h1> 
         <p class="subtitle">Code by Narcissus & AI Core</p>
         <button class="main-btn" onclick="showStory()">ИГРАТЬ</button>
     </div>
 
+    <!-- СЮЖЕТ -->
     <div id="story-screen" class="screen hidden">
         <div class="story-box">
             <img src="img/boss_head.png" class="virus-icon">
@@ -76,6 +82,7 @@
         </div>
     </div>
 
+    <!-- ИГРА -->
     <div id="ui-layer">
         <div id="score-box">SCORE: <span id="score">0</span></div>
         <div id="lives-box">❤❤❤</div>
@@ -85,6 +92,7 @@
                 <div id="btn-left" class="btn"></div>
                 <div id="btn-right" class="btn"></div>
             </div>
+            
             <div class="btn-group-right">
                 <div id="btn-ulta" class="btn"></div>
                 <div id="btn-fire" class="btn"></div>
@@ -92,11 +100,12 @@
         </div>
     </div>
 
+    <!-- GAME OVER -->
     <div id="gameover" class="screen">
         <h1>СИСТЕМА<br>ПАЛА</h1>
         <p style="color: #fff; font-size: 20px;">Счет: <span id="final-score">0</span></p>
         <button class="main-btn" onclick="restartInstant()">ИГРАТЬ СНОВА</button>
-        <button class="sub-btn" onclick="goToMenu()">В главное меню</button>
+        <button class="sub-btn" onclick="saveAndExit()">💾 Сохранить и Выйти</button>
     </div>
 
 <script>
@@ -204,6 +213,13 @@
     }
 
     function restartInstant() { startGame(); }
+
+    // ОТПРАВКА ДАННЫХ БОТУ И ВЫХОД
+    function saveAndExit() {
+        playSound(sfxClick);
+        const data = JSON.stringify({ score: score });
+        tg.sendData(data); 
+    }
 
     function goToMenu() {
         playSound(sfxClick);
@@ -317,7 +333,7 @@
         if (isMinion) {
             enemies.push({ 
                 img: images[type], x: startX, y: startY, w: size, h: size, 
-                speed: 4, dx: dirX // У миньонов есть горизонтальная скорость
+                speed: 4, dx: dirX 
             });
         } else {
             enemies.push({ 
@@ -327,15 +343,16 @@
         }
     }
 
+    // --- МУСОР (СТАТИЧНЫЙ, БЕЗ АНИМАЦИИ) ---
     function initAtmosphere() {
         trash = [];
-        trash.push({ img: images['trash_1'], x: width * 0.1, y: height * 0.15, w: 100, h: 80, baseX: 0, baseY: 0, phase: 0, speed: 0.02, range: 10, angle: -0.1 });
-        trash.push({ img: images['trash_2'], x: width * 0.65, y: height * 0.2, w: 140, h: 100, baseX: 0, baseY: 0, phase: 2, speed: 0.015, range: 15, angle: 0.1 });
-        trash.push({ img: images['trash_3'], x: width * 0.05, y: height * 0.4, w: 80, h: 120, baseX: 0, baseY: 0, phase: 4, speed: 0.025, range: 20, angle: 0.2 });
-        trash.push({ img: images['trash_1'], x: width * 0.75, y: height * 0.5, w: 90, h: 70, baseX: 0, baseY: 0, phase: 1, speed: 0.01, range: 12, angle: -0.1 });
-        trash.push({ img: images['trash_2'], x: width * 0.15, y: height * 0.7, w: 130, h: 90, baseX: 0, baseY: 0, phase: 3, speed: 0.02, range: 10, angle: 0.05 });
-        trash.push({ img: images['trash_3'], x: width * 0.6, y: height * 0.8, w: 70, h: 100, baseX: 0, baseY: 0, phase: 5, speed: 0.015, range: 15, angle: -0.2 });
-        trash.forEach(t => { t.baseX = t.x; t.baseY = t.y; });
+        // Просто координаты, без скоростей и фаз
+        trash.push({ img: images['trash_1'], x: width * 0.1, y: height * 0.15, w: 100, h: 80 });
+        trash.push({ img: images['trash_2'], x: width * 0.65, y: height * 0.2, w: 140, h: 100 });
+        trash.push({ img: images['trash_3'], x: width * 0.05, y: height * 0.4, w: 80, h: 120 });
+        trash.push({ img: images['trash_1'], x: width * 0.75, y: height * 0.5, w: 90, h: 70 });
+        trash.push({ img: images['trash_2'], x: width * 0.15, y: height * 0.7, w: 130, h: 90 });
+        trash.push({ img: images['trash_3'], x: width * 0.6, y: height * 0.8, w: 70, h: 100 });
     }
 
     function updateLivesUI() {
@@ -364,17 +381,12 @@
 
         if(images['bg_game']) ctx.drawImage(images['bg_game'], 0, 0, width, height);
 
+        // Мусор (статичный)
         for (let i = 0; i < trash.length; i++) {
             let t = trash[i];
-            t.y = t.baseY + Math.sin(frames * t.speed + t.phase) * t.range;
-            t.x = t.baseX + Math.cos(frames * t.speed + t.phase) * (t.range / 2);
-            ctx.save();
-            ctx.translate(t.x + t.w/2, t.y + t.h/2);
-            ctx.rotate(t.angle);
-            ctx.globalAlpha = 0.6; 
-            if(t.img) ctx.drawImage(t.img, -t.w/2, -t.h/2, t.w, t.h);
+            ctx.globalAlpha = 0.5; // Полупрозрачность
+            if(t.img) ctx.drawImage(t.img, t.x, t.y, t.w, t.h);
             ctx.globalAlpha = 1.0;
-            ctx.restore();
         }
 
         if(images['boss_head'] && images['glitch_ring']) {
@@ -425,7 +437,7 @@
                 ctx.fillRect(miniBoss.x, miniBoss.y - 10, miniBoss.w * (miniBoss.hp / miniBoss.maxHp), 5);
 
                 miniBoss.shootTimer++;
-                if (miniBoss.shootTimer > 240) { // 4 секунды (240 кадров при 60fps)
+                if (miniBoss.shootTimer > 240) {
                     spawnEnemy(true, miniBoss.x + 20, miniBoss.y + 50, -2);
                     spawnEnemy(true, miniBoss.x + 40, miniBoss.y + 50, 0);
                     spawnEnemy(true, miniBoss.x + 60, miniBoss.y + 50, 2);
@@ -459,16 +471,9 @@
                 e.y += e.speed;
                 e.x += (e.dx || 0);
                 
-                // ОТСКОК ОТ СТЕН (Для миньонов)
                 if (e.dx !== 0) {
-                    if (e.x <= 0) {
-                        e.x = 0;
-                        e.dx = -e.dx;
-                    }
-                    if (e.x + e.w >= width) {
-                        e.x = width - e.w;
-                        e.dx = -e.dx;
-                    }
+                    if (e.x <= 0) { e.x = 0; e.dx = -e.dx; }
+                    if (e.x + e.w >= width) { e.x = width - e.w; e.dx = -e.dx; }
                 }
 
                 ctx.drawImage(e.img, e.x, e.y, e.w, e.h);
