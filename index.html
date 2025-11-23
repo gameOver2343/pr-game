@@ -15,7 +15,8 @@
         #menu-screen { background: rgba(0,0,0,0.6); }
         h1 { color: #fff; font-size: 40px; text-transform: uppercase; text-shadow: 4px 4px 0 #ff0055; margin-bottom: 10px; }
         .subtitle { color: #00ccff; font-size: 16px; margin-bottom: 40px; text-shadow: 1px 1px 0 #000; }
-        
+        .version-tag { color: #00ff00; font-size: 12px; margin-bottom: 30px; opacity: 0.7; }
+
         #story-screen { background: rgba(20, 0, 10, 0.95); padding: 20px; box-sizing: border-box; }
         .story-box { border: 2px solid #fff; padding: 20px; background: #000; box-shadow: 5px 5px 0 #ff0055; max-width: 90%; }
         .story-text { color: #fff; font-size: 18px; line-height: 1.5; margin-bottom: 20px; text-align: left; }
@@ -27,7 +28,7 @@
         
         .controls { position: absolute; bottom: 20px; width: 100%; height: 100px; pointer-events: auto; display: flex; justify-content: space-between; padding: 0 20px; box-sizing: border-box; z-index: 20; }
         .btn-group-left { display: flex; gap: 15px; }
-        .btn-group-right { display: flex; gap: 15px; align-items: flex-end; }
+        .btn-group-right { display: flex; gap: 15px; align-items: flex-end; } /* Кнопка ульты убрана */
         
         .btn { width: 80px; height: 80px; background-size: contain; background-repeat: no-repeat; background-position: center; opacity: 0.7; transition: transform 0.05s; touch-action: none; }
         .btn:active { transform: scale(0.9); opacity: 1; }
@@ -36,19 +37,10 @@
         #btn-right { background-image: url('img/btn_right.png'); }
         #btn-fire { background-image: url('img/btn_fire.png'); }
         
-        #btn-ulta { 
-            display: none; 
-            background-image: url('img/ulta.png'); 
-            width: 70px; height: 70px;
-            animation: pulse-fast 0.5s infinite;
-            filter: drop-shadow(0 0 10px #00ccff);
-        }
-
         .main-btn { padding: 15px 40px; font-size: 22px; background: #ff0055; color: #fff; border: none; cursor: pointer; font-family: inherit; font-weight: bold; text-transform: uppercase; box-shadow: 0 0 15px #ff0055; animation: pulse 1.5s infinite; margin-bottom: 20px; }
         .sub-btn { background: none; border: none; color: #aaa; font-size: 16px; cursor: pointer; text-decoration: underline; font-family: inherit; }
         
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-        @keyframes pulse-fast { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
         @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 10% { transform: translate(-1px, -2px) rotate(-1deg); } 20% { transform: translate(-3px, 0px) rotate(1deg); } 30% { transform: translate(3px, 2px) rotate(0deg); } 40% { transform: translate(1px, -1px) rotate(1deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 60% { transform: translate(-3px, 1px) rotate(0deg); } 70% { transform: translate(3px, 1px) rotate(-1deg); } 80% { transform: translate(-1px, -1px) rotate(1deg); } 90% { transform: translate(1px, 2px) rotate(0deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
 
         #gameover { display: none; background: rgba(0,0,0,0.9); z-index: 30; }
@@ -60,7 +52,8 @@
 
     <div id="menu-screen" class="screen">
         <h1>CYBER<br>DEFENSE</h1> 
-        <p class="subtitle">Code by Timur Zacharzhevskiy & Gemini</p>
+        <p class="subtitle">Code by Narcissus & AI Core</p>
+        <p class="version-tag">VER 4.0 (AUTO-ULTA)</p> 
         <button class="main-btn" onclick="showStory()">ИГРАТЬ</button>
     </div>
 
@@ -85,7 +78,7 @@
                 <div id="btn-right" class="btn"></div>
             </div>
             <div class="btn-group-right">
-                <div id="btn-ulta" class="btn"></div>
+                <!-- Кнопки ульты нет, только огонь -->
                 <div id="btn-fire" class="btn"></div>
             </div>
         </div>
@@ -113,7 +106,6 @@
     const keys = { left: false, right: false };
 
     let nextUltaScore = 1000; 
-    let isUltaReady = false;
     let miniBoss = null; 
     let nextMiniBossScore = 5000; 
 
@@ -121,34 +113,24 @@
     const storyScreen = document.getElementById('story-screen');
     const uiLayer = document.getElementById('ui-layer');
     const gameoverScreen = document.getElementById('gameover');
-    const btnUlta = document.getElementById('btn-ulta');
 
-    // Аудио (Оставили только то, что не тормозит)
     const musicMenu = new Audio('audio/music_menu.mp3'); musicMenu.loop = true;
     const musicGame = new Audio('audio/music_game.mp3'); musicGame.loop = true; musicGame.volume = 0.6;
-    // sfxShoot убрали
     const sfxGameOver = new Audio('audio/gameover.mp3');
     const sfxClick = new Audio('audio/knok.mp3');
-    // sfxUlta убрали
     const sfxMiniBossDead = new Audio('audio/mini_boss.mp3');
 
-    function playSound(sound) {
-        if (sound.paused) { sound.play().catch(()=>{}); } else { sound.currentTime = 0; }
-    }
+    function playSound(sound) { if (sound.paused) { sound.play().catch(()=>{}); } else { sound.currentTime = 0; } }
 
     const images = {};
-    const imageList = ['bg_game.jpg', 'boss_head.png', 'glitch_ring.png', 'player.png', 'bullet.png', 'enemy_1.png', 'enemy_2.png', 'enemy_3.png', 'trash_1.png', 'trash_2.png', 'trash_3.png', 'kill.png', 'ulta.png', 'mini_boss.png'];
+    const imageList = ['bg_game.jpg', 'boss_head.png', 'glitch_ring.png', 'player.png', 'bullet.png', 'enemy_1.png', 'enemy_2.png', 'enemy_3.png', 'trash_1.png', 'trash_2.png', 'trash_3.png', 'kill.png', 'mini_boss.png'];
     let imagesLoaded = 0;
 
     function loadImages() {
         imageList.forEach(name => {
             const img = new Image();
             img.src = 'img/' + name;
-            img.onload = () => {
-                images[name.split('.')[0]] = img; 
-                imagesLoaded++;
-                if (imagesLoaded === imageList.length) initGame();
-            };
+            img.onload = () => { images[name.split('.')[0]] = img; imagesLoaded++; if (imagesLoaded === imageList.length) initGame(); };
         });
     }
 
@@ -168,22 +150,17 @@
 
     function startGame() {
         playSound(sfxClick);
-        musicMenu.pause();
-        musicMenu.currentTime = 0;
+        musicMenu.pause(); musicMenu.currentTime = 0;
         musicGame.play().catch(()=>{});
-
         storyScreen.classList.add('hidden');
         gameoverScreen.style.display = 'none'; 
         uiLayer.style.display = 'block';
-        
-        score = 0; lives = 3; nextUltaScore = 1000; nextMiniBossScore = 5000; 
-        isUltaReady = false; btnUlta.style.display = 'none'; miniBoss = null;
+        score = 0; lives = 3; nextUltaScore = 1000; nextMiniBossScore = 5000; miniBoss = null;
         enemies = []; bullets = []; explosions = [];
         player.x = width / 2 - player.w / 2;
         document.getElementById('score').innerText = "0";
         updateLivesUI();
         keys.left = false; keys.right = false;
-        
         gameState = 'game';
     }
 
@@ -193,7 +170,7 @@
         playSound(sfxClick);
         const data = JSON.stringify({ score: score });
         tg.sendData(data);
-        tg.close(); 
+        setTimeout(() => { tg.close(); }, 100);
     }
 
     function goToMenu() {
@@ -231,16 +208,12 @@
     
     btnFire.addEventListener('touchstart', (e) => { e.preventDefault(); shoot(); });
     btnFire.addEventListener('mousedown', (e) => { e.preventDefault(); shoot(); });
-    
-    btnUlta.addEventListener('touchstart', (e) => { e.preventDefault(); fireUlta(); });
-    btnUlta.addEventListener('mousedown', (e) => { e.preventDefault(); fireUlta(); });
 
     window.addEventListener('keydown', e => {
         if(gameState !== 'game') return;
         if(e.key === 'ArrowLeft') keys.left = true;
         if(e.key === 'ArrowRight') keys.right = true;
         if(e.key === ' ') shoot();
-        if(e.key === 'Shift') fireUlta(); 
     });
     window.addEventListener('keyup', e => {
         if(e.key === 'ArrowLeft') keys.left = false;
@@ -259,38 +232,24 @@
 
     function shoot() {
         if(gameState !== 'game') return;
-        // Обычный выстрел (прямо)
         bullets.push({ x: player.x + player.w/2 - 15, y: player.y, w: 30, h: 30, dx: 0, dy: -10 });
-        // Звук убрали для скорости
         tg.HapticFeedback.impactOccurred('light');
     }
 
+    // --- АВТО-УЛЬТА ---
     function checkUlta() {
-        if (score >= nextUltaScore && !isUltaReady) {
-            isUltaReady = true;
-            btnUlta.style.display = 'block'; 
-            tg.HapticFeedback.notificationOccurred('success');
+        if (score >= nextUltaScore) {
+            fireUlta();
+            nextUltaScore += 1000; // Следующая ульта через 1000
         }
     }
 
     function fireUlta() {
-        if (!isUltaReady) return;
-        // Звук убрали (playSound(sfxUlta)) чтобы не лагало
-        tg.HapticFeedback.notificationOccurred('heavy');
-        isUltaReady = false;
-        btnUlta.style.display = 'none';
-        nextUltaScore += 1000; 
-        
-        // Веерный выстрел
+        tg.HapticFeedback.notificationOccurred('success'); // Вибрация
+        // Веерный залп
         for (let i = 0; i < 10; i++) {
             let angle = -0.5 + (i / 9) * 1.0;
-            bullets.push({ 
-                x: player.x + player.w/2 - 15, 
-                y: player.y, 
-                w: 30, h: 30, 
-                dx: Math.sin(angle) * 8, // В стороны
-                dy: -12 // Вверх
-            });
+            bullets.push({ x: player.x + player.w/2 - 15, y: player.y, w: 30, h: 30, dx: Math.sin(angle) * 8, dy: -12 });
         }
     }
 
@@ -315,7 +274,6 @@
 
     function initAtmosphere() {
         trash = [];
-        // Статичный мусор
         trash.push({ img: images['trash_1'], x: width * 0.1, y: height * 0.15, w: 100, h: 80 });
         trash.push({ img: images['trash_2'], x: width * 0.65, y: height * 0.2, w: 140, h: 100 });
         trash.push({ img: images['trash_3'], x: width * 0.05, y: height * 0.4, w: 80, h: 120 });
@@ -450,7 +408,6 @@
                     let b = bullets[j];
                     if (b.x < e.x + e.w && b.x + b.w > e.x && b.y < e.y + e.h && b.y + b.h > e.y) {
                         explosions.push({ x: e.x, y: e.y, w: e.w, h: e.h, timer: 30 });
-                        // Звук попадания убрали (оптимизация)
                         enemies.splice(i, 1);
                         bullets.splice(j, 1);
                         score += 100;
