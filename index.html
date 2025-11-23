@@ -6,7 +6,6 @@
     <title>Antivirus vs Virus</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* Оптимизация рендеринга */
         body { margin: 0; overflow: hidden; background: #000; touch-action: none; user-select: none; -webkit-user-select: none; font-family: 'Courier New', Courier, monospace; }
         canvas { display: block; width: 100%; height: 100%; }
         
@@ -124,13 +123,13 @@
     const gameoverScreen = document.getElementById('gameover');
     const btnUlta = document.getElementById('btn-ulta');
 
-    // Аудио
+    // Аудио (Оставили только то, что не тормозит)
     const musicMenu = new Audio('audio/music_menu.mp3'); musicMenu.loop = true;
     const musicGame = new Audio('audio/music_game.mp3'); musicGame.loop = true; musicGame.volume = 0.6;
-    const sfxShoot = new Audio('audio/shoot.mp3');
+    // sfxShoot убрали
     const sfxGameOver = new Audio('audio/gameover.mp3');
     const sfxClick = new Audio('audio/knok.mp3');
-    const sfxUlta = new Audio('audio/ulta.mp3');
+    // sfxUlta убрали
     const sfxMiniBossDead = new Audio('audio/mini_boss.mp3');
 
     function playSound(sound) {
@@ -192,11 +191,9 @@
 
     function saveAndExit() {
         playSound(sfxClick);
-        // Отправляем данные боту
         const data = JSON.stringify({ score: score });
         tg.sendData(data);
-        // Закрываем окно
-        setTimeout(() => { tg.close(); }, 100); 
+        tg.close(); 
     }
 
     function goToMenu() {
@@ -262,8 +259,9 @@
 
     function shoot() {
         if(gameState !== 'game') return;
-        // ОБЫЧНЫЙ ВЫСТРЕЛ (dx=0, dy=-10)
+        // Обычный выстрел (прямо)
         bullets.push({ x: player.x + player.w/2 - 15, y: player.y, w: 30, h: 30, dx: 0, dy: -10 });
+        // Звук убрали для скорости
         tg.HapticFeedback.impactOccurred('light');
     }
 
@@ -277,21 +275,21 @@
 
     function fireUlta() {
         if (!isUltaReady) return;
-        playSound(sfxUlta);
+        // Звук убрали (playSound(sfxUlta)) чтобы не лагало
         tg.HapticFeedback.notificationOccurred('heavy');
         isUltaReady = false;
         btnUlta.style.display = 'none';
         nextUltaScore += 1000; 
         
-        // УЛЬТА (Веерный выстрел)
+        // Веерный выстрел
         for (let i = 0; i < 10; i++) {
             let angle = -0.5 + (i / 9) * 1.0;
             bullets.push({ 
                 x: player.x + player.w/2 - 15, 
                 y: player.y, 
                 w: 30, h: 30, 
-                dx: Math.sin(angle) * 8, // Летим в стороны
-                dy: -12 // Летим вверх
+                dx: Math.sin(angle) * 8, // В стороны
+                dy: -12 // Вверх
             });
         }
     }
@@ -317,6 +315,7 @@
 
     function initAtmosphere() {
         trash = [];
+        // Статичный мусор
         trash.push({ img: images['trash_1'], x: width * 0.1, y: height * 0.15, w: 100, h: 80 });
         trash.push({ img: images['trash_2'], x: width * 0.65, y: height * 0.2, w: 140, h: 100 });
         trash.push({ img: images['trash_3'], x: width * 0.05, y: height * 0.4, w: 80, h: 120 });
@@ -382,7 +381,6 @@
 
             for (let i = 0; i < bullets.length; i++) {
                 let b = bullets[i];
-                // 👇 ВОТ ТУТ Я ИСПРАВИЛ: ДОБАВИЛ dx и dy
                 b.y += b.dy; 
                 b.x += b.dx; 
                 if(images['bullet']) ctx.drawImage(images['bullet'], b.x, b.y, b.w, b.h);
@@ -452,6 +450,7 @@
                     let b = bullets[j];
                     if (b.x < e.x + e.w && b.x + b.w > e.x && b.y < e.y + e.h && b.y + b.h > e.y) {
                         explosions.push({ x: e.x, y: e.y, w: e.w, h: e.h, timer: 30 });
+                        // Звук попадания убрали (оптимизация)
                         enemies.splice(i, 1);
                         bullets.splice(j, 1);
                         score += 100;
