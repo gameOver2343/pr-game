@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Antivirus vs Virus</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; touch-action: none; user-select: none; -webkit-user-select: none; font-family: 'Courier New', Courier, monospace; }
+        canvas { display: block; width: 100%; height: 100%; }
+        
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; z-index: 10; }
+        .hidden { display: none !important; }
+
+        #menu-screen { background: rgba(0,0,0,0.6); }
+        h1 { color: #fff; font-size: 40px; text-transform: uppercase; text-shadow: 4px 4px 0 #ff0055; margin-bottom: 10px; }
+        .subtitle { color: #00ccff; font-size: 16px; margin-bottom: 40px; text-shadow: 1px 1px 0 #000; }
+        
+        #story-screen { background: rgba(20, 0, 10, 0.95); padding: 20px; box-sizing: border-box; }
+        .story-box { border: 2px solid #fff; padding: 20px; background: #000; box-shadow: 5px 5px 0 #ff0055; max-width: 90%; }
+        .story-text { color: #fff; font-size: 18px; line-height: 1.5; margin-bottom: 20px; text-align: left; }
+        .virus-icon { width: 80px; margin-bottom: 20px; animation: shake 0.5s infinite; }
+
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none; }
+        #score-box { position: absolute; top: 20px; left: 20px; color: #fff; font-size: 24px; font-weight: bold; text-shadow: 2px 2px 0 #ff00ff; }
+        #lives-box { position: absolute; top: 20px; right: 20px; color: #ff0055; font-size: 24px; font-weight: bold; text-shadow: 2px 2px 0 #fff; letter-spacing: 5px; }
+        
+        .controls { position: absolute; bottom: 30px; width: 100%; height: 100px; pointer-events: auto; display: flex; justify-content: space-between; padding: 0 20px; box-sizing: border-box; }
+        .btn-group-left { display: flex; gap: 20px; }
+        .btn-group-right { display: flex; gap: 20px; align-items: flex-end; }
+        
+        .btn { width: 80px; height: 80px; background-size: contain; background-repeat: no-repeat; background-position: center; opacity: 0.8; transition: transform 0.1s; }
+        .btn:active { transform: scale(0.9); opacity: 1; }
+        
+        #btn-left { background-image: url('img/btn_left.png'); }
+        #btn-right { background-image: url('img/btn_right.png'); }
+        #btn-fire { background-image: url('img/btn_fire.png'); }
+        
+        #btn-ulta { 
+            display: none; 
+            background-image: url('img/ulta.png'); 
+            width: 70px; height: 70px;
+            animation: pulse-fast 0.5s infinite;
+            filter: drop-shadow(0 0 10px #00ccff);
+        }
+
+        .main-btn { padding: 15px 40px; font-size: 22px; background: #ff0055; color: #fff; border: none; cursor: pointer; font-family: inherit; font-weight: bold; text-transform: uppercase; box-shadow: 0 0 15px #ff0055; animation: pulse 1.5s infinite; margin-bottom: 20px; }
+        .sub-btn { background: none; border: none; color: #aaa; font-size: 16px; cursor: pointer; text-decoration: underline; font-family: inherit; }
+        
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        @keyframes pulse-fast { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
+        @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 10% { transform: translate(-1px, -2px) rotate(-1deg); } 20% { transform: translate(-3px, 0px) rotate(1deg); } 30% { transform: translate(3px, 2px) rotate(0deg); } 40% { transform: translate(1px, -1px) rotate(1deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 60% { transform: translate(-3px, 1px) rotate(0deg); } 70% { transform: translate(3px, 1px) rotate(-1deg); } 80% { transform: translate(-1px, -1px) rotate(1deg); } 90% { transform: translate(1px, 2px) rotate(0deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
+
+        #gameover { display: none; background: rgba(0,0,0,0.9); }
+    </style>
+</head>
+<body>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="menu-screen" class="screen">
+        <h1>CYBER<br>DEFENSE</h1> 
+        <p class="subtitle">Code by Narcissus & AI Core</p>
+        <button class="main-btn" onclick="showStory()">ИГРАТЬ</button>
+    </div>
+
+    <div id="story-screen" class="screen hidden">
+        <div class="story-box">
+            <img src="img/boss_head.png" class="virus-icon">
+            <p class="story-text">
+                ⚠ <b>ВНИМАНИЕ!</b><br><br>
+                Система кафедры заражена неизвестным вирусом.<br>
+                Твоя задача: активировать Антивирус и зачистить угрозу.
+            </p>
+            <button class="main-btn" onclick="startGame()">В БОЙ!</button>
+        </div>
+    </div>
+
+    <div id="ui-layer">
+        <div id="score-box">SCORE: <span id="score">0</span></div>
+        <div id="lives-box">❤❤❤</div>
+        
+        <div class="controls">
+            <div class="btn-group-left">
+                <div id="btn-left" class="btn"></div>
+                <div id="btn-right" class="btn"></div>
+            </div>
+            <div class="btn-group-right">
+                <div id="btn-ulta" class="btn"></div>
+                <div id="btn-fire" class="btn"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="gameover" class="screen">
+        <h1>СИСТЕМА<br>ПАЛА</h1>
+        <p style="color: #fff; font-size: 20px;">Счет: <span id="final-score">0</span></p>
+        <button class="main-btn" onclick="restartInstant()">ИГРАТЬ СНОВА</button>
+        <button class="sub-btn" onclick="goToMenu()">В главное меню</button>
+    </div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const tg = window.Telegram.WebApp;
+    tg.expand(); 
+
+    let gameState = 'menu';
+    let width, height;
+    let score = 0;
+    let lives = 3;
+    let frames = 0;
+    
+    let nextUltaScore = 1000; 
+    let isUltaReady = false;
+
+    let miniBoss = null; 
+    let nextMiniBossScore = 5000; 
+
+    const menuScreen = document.getElementById('menu-screen');
+    const storyScreen = document.getElementById('story-screen');
+    const uiLayer = document.getElementById('ui-layer');
+    const gameoverScreen = document.getElementById('gameover');
+    const btnUlta = document.getElementById('btn-ulta');
+
+    // ЗВУКИ
+    const musicMenu = new Audio('audio/music_menu.mp3'); musicMenu.loop = true;
+    const musicGame = new Audio('audio/music_game.mp3'); musicGame.loop = true; musicGame.volume = 0.6;
+    const sfxShoot = new Audio('audio/shoot.mp3');
+    const sfxHit = new Audio('audio/hit.mp3');
+    const sfxGameOver = new Audio('audio/gameover.mp3');
+    const sfxClick = new Audio('audio/knok.mp3');
+    const sfxUlta = new Audio('audio/ulta.mp3');
+    const sfxMiniBossDead = new Audio('audio/mini_boss.mp3');
+
+    function playSound(sound) {
+        const clone = sound.cloneNode();
+        clone.volume = 0.8;
+        clone.play().catch(e => {});
+    }
+
+    const images = {};
+    const imageList = [
+        'bg_game.jpg', 'boss_head.png', 'glitch_ring.png', 
+        'player.png', 'bullet.png', 
+        'enemy_1.png', 'enemy_2.png', 'enemy_3.png',
+        'trash_1.png', 'trash_2.png', 'trash_3.png',
+        'kill.png', 'ulta.png', 'mini_boss.png'
+    ];
+    let imagesLoaded = 0;
+
+    function loadImages() {
+        imageList.forEach(name => {
+            const img = new Image();
+            img.src = 'img/' + name;
+            img.onload = () => {
+                images[name.split('.')[0]] = img; 
+                imagesLoaded++;
+                if (imagesLoaded === imageList.length) initGame();
+            };
+        });
+    }
+
+    function initGame() {
+        resize();
+        initAtmosphere();
+        requestAnimationFrame(update);
+    }
+
+    function showStory() {
+        playSound(sfxClick);
+        musicMenu.play().catch(e => console.log("Touch"));
+        menuScreen.classList.add('hidden');
+        storyScreen.classList.remove('hidden');
+        gameState = 'story';
+    }
+
+    function startGame() {
+        playSound(sfxClick);
+        musicMenu.pause();
+        musicMenu.currentTime = 0;
+        musicGame.play();
+
+        storyScreen.classList.add('hidden');
+        gameoverScreen.style.display = 'none'; 
+        uiLayer.style.display = 'block';
+        
+        score = 0;
+        lives = 3;
+        nextUltaScore = 1000; 
+        nextMiniBossScore = 5000; 
+        isUltaReady = false;
+        btnUlta.style.display = 'none';
+        miniBoss = null;
+
+        enemies = [];
+        bullets = [];
+        explosions = [];
+        player.x = width / 2 - player.w / 2;
+        document.getElementById('score').innerText = "0";
+        updateLivesUI();
+        
+        gameState = 'game';
+    }
+
+    function restartInstant() { startGame(); }
+
+    function goToMenu() {
+        playSound(sfxClick);
+        musicGame.pause();
+        musicGame.currentTime = 0;
+        musicMenu.play();
+        gameoverScreen.style.display = 'none';
+        uiLayer.style.display = 'none';
+        menuScreen.classList.remove('hidden');
+        enemies = [];
+        bullets = [];
+        explosions = [];
+        gameState = 'menu';
+    }
+
+    const player = { x: 0, y: 0, w: 100, h: 60, speed: 7, dx: 0 };
+    const boss = { angle: 0 }; 
+    let bullets = [];
+    let enemies = [];
+    let trash = [];
+    let explosions = [];
+
+    const btnLeft = document.getElementById('btn-left');
+    const btnRight = document.getElementById('btn-right');
+    const btnFire = document.getElementById('btn-fire');
+
+    const addTouch = (elem, startAction, endAction) => {
+        elem.addEventListener('touchstart', (e) => { e.preventDefault(); startAction(); });
+        elem.addEventListener('touchend', (e) => { e.preventDefault(); endAction(); });
+        elem.addEventListener('mousedown', (e) => { e.preventDefault(); startAction(); });
+        elem.addEventListener('mouseup', (e) => { e.preventDefault(); endAction(); });
+    };
+
+    addTouch(btnLeft, () => player.dx = -player.speed, () => player.dx = 0);
+    addTouch(btnRight, () => player.dx = player.speed, () => player.dx = 0);
+    addTouch(btnFire, () => shoot(), () => {});
+    addTouch(btnUlta, () => fireUlta(), () => {});
+
+    window.addEventListener('keydown', e => {
+        if(gameState !== 'game') return;
+        if(e.key === 'ArrowLeft') player.dx = -player.speed;
+        if(e.key === 'ArrowRight') player.dx = player.speed;
+        if(e.key === ' ') shoot();
+        if(e.key === 'Shift') fireUlta(); 
+    });
+    window.addEventListener('keyup', e => {
+        if(e.key === 'ArrowLeft' || e.key === 'ArrowRight') player.dx = 0;
+    });
+
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        width = canvas.width;
+        height = canvas.height;
+        player.y = height - 200; 
+        player.x = width / 2 - player.w / 2;
+    }
+    window.addEventListener('resize', resize);
+
+    function shoot() {
+        if(gameState !== 'game') return;
+        bullets.push({ x: player.x + player.w/2 - 15, y: player.y, w: 30, h: 30, dx: 0, dy: -10 });
+        playSound(sfxShoot);
+        tg.HapticFeedback.impactOccurred('light');
+    }
+
+    function checkUlta() {
+        if (score >= nextUltaScore && !isUltaReady) {
+            isUltaReady = true;
+            btnUlta.style.display = 'block'; 
+            tg.HapticFeedback.notificationOccurred('success');
+        }
+    }
+
+    function fireUlta() {
+        if (!isUltaReady) return;
+        playSound(sfxUlta);
+        tg.HapticFeedback.notificationOccurred('heavy');
+        isUltaReady = false;
+        btnUlta.style.display = 'none';
+        nextUltaScore += 1000; 
+        for (let i = 0; i < 10; i++) {
+            let angle = -0.5 + (i / 9) * 1.0;
+            bullets.push({ x: player.x + player.w/2 - 15, y: player.y, w: 30, h: 30, dx: Math.sin(angle) * 8, dy: -12 });
+        }
+    }
+
+    function checkMiniBoss() {
+        if (score >= nextMiniBossScore && miniBoss === null) {
+            spawnMiniBoss();
+        }
+    }
+
+    function spawnMiniBoss() {
+        miniBoss = {
+            x: width / 2 - 60,
+            y: -120,
+            w: 120, h: 120,
+            hp: 10,
+            maxHp: 10,
+            speed: 0.7,
+            shootTimer: 0
+        };
+    }
+
+    function spawnEnemy(isMinion = false, startX = 0, startY = 0, dirX = 0) {
+        const types = ['enemy_1', 'enemy_2', 'enemy_3'];
+        const type = types[Math.floor(Math.random() * types.length)];
+        const size = 60;
+        
+        if (isMinion) {
+            enemies.push({ 
+                img: images[type], x: startX, y: startY, w: size, h: size, 
+                speed: 4, dx: dirX // У миньонов есть горизонтальная скорость
+            });
+        } else {
+            enemies.push({ 
+                img: images[type], x: Math.random() * (width - size), y: -100, w: size, h: size, 
+                speed: 3 + Math.random() * 3, dx: 0 
+            });
+        }
+    }
+
+    function initAtmosphere() {
+        trash = [];
+        trash.push({ img: images['trash_1'], x: width * 0.1, y: height * 0.15, w: 100, h: 80, baseX: 0, baseY: 0, phase: 0, speed: 0.02, range: 10, angle: -0.1 });
+        trash.push({ img: images['trash_2'], x: width * 0.65, y: height * 0.2, w: 140, h: 100, baseX: 0, baseY: 0, phase: 2, speed: 0.015, range: 15, angle: 0.1 });
+        trash.push({ img: images['trash_3'], x: width * 0.05, y: height * 0.4, w: 80, h: 120, baseX: 0, baseY: 0, phase: 4, speed: 0.025, range: 20, angle: 0.2 });
+        trash.push({ img: images['trash_1'], x: width * 0.75, y: height * 0.5, w: 90, h: 70, baseX: 0, baseY: 0, phase: 1, speed: 0.01, range: 12, angle: -0.1 });
+        trash.push({ img: images['trash_2'], x: width * 0.15, y: height * 0.7, w: 130, h: 90, baseX: 0, baseY: 0, phase: 3, speed: 0.02, range: 10, angle: 0.05 });
+        trash.push({ img: images['trash_3'], x: width * 0.6, y: height * 0.8, w: 70, h: 100, baseX: 0, baseY: 0, phase: 5, speed: 0.015, range: 15, angle: -0.2 });
+        trash.forEach(t => { t.baseX = t.x; t.baseY = t.y; });
+    }
+
+    function updateLivesUI() {
+        let hearts = "";
+        for(let i=0; i<lives; i++) hearts += "❤";
+        document.getElementById('lives-box').innerText = hearts;
+    }
+
+    function loseLife() {
+        lives--;
+        updateLivesUI();
+        tg.HapticFeedback.notificationOccurred('warning');
+        if (lives <= 0) {
+            musicGame.pause();
+            musicGame.currentTime = 0;
+            playSound(sfxGameOver);
+            gameState = 'gameover';
+            document.getElementById('gameover').style.display = 'flex';
+            document.getElementById('final-score').innerText = score;
+            uiLayer.style.display = 'none';
+        }
+    }
+
+    function update() {
+        ctx.clearRect(0, 0, width, height);
+
+        if(images['bg_game']) ctx.drawImage(images['bg_game'], 0, 0, width, height);
+
+        for (let i = 0; i < trash.length; i++) {
+            let t = trash[i];
+            t.y = t.baseY + Math.sin(frames * t.speed + t.phase) * t.range;
+            t.x = t.baseX + Math.cos(frames * t.speed + t.phase) * (t.range / 2);
+            ctx.save();
+            ctx.translate(t.x + t.w/2, t.y + t.h/2);
+            ctx.rotate(t.angle);
+            ctx.globalAlpha = 0.6; 
+            if(t.img) ctx.drawImage(t.img, -t.w/2, -t.h/2, t.w, t.h);
+            ctx.globalAlpha = 1.0;
+            ctx.restore();
+        }
+
+        if(images['boss_head'] && images['glitch_ring']) {
+            boss.angle += 0.02;
+            ctx.save();
+            ctx.translate(width/2, 100); 
+            ctx.rotate(boss.angle);
+            const ringSize = 300;
+            ctx.drawImage(images['glitch_ring'], -ringSize/2, -ringSize/2, ringSize, ringSize);
+            ctx.restore();
+            const headSize = 200; 
+            ctx.drawImage(images['boss_head'], width/2 - headSize/2, 30, headSize, headSize);
+        }
+
+        if (gameState === 'game') {
+            player.x += player.dx;
+            if(player.x < 0) player.x = 0;
+            if(player.x + player.w > width) player.x = width - player.w;
+            if(images['player']) ctx.drawImage(images['player'], player.x, player.y, player.w, player.h);
+
+            for (let i = 0; i < bullets.length; i++) {
+                let b = bullets[i];
+                b.y += b.dy; 
+                b.x += b.dx; 
+                if(images['bullet']) ctx.drawImage(images['bullet'], b.x, b.y, b.w, b.h);
+                if (b.y < 0 || b.x < 0 || b.x > width) bullets.splice(i, 1);
+            }
+
+            for (let k = 0; k < explosions.length; k++) {
+                let ex = explosions[k];
+                if(images['kill']) ctx.drawImage(images['kill'], ex.x, ex.y, ex.w, ex.h);
+                ex.timer--;
+                if (ex.timer <= 0) {
+                    explosions.splice(k, 1);
+                    k--;
+                }
+            }
+
+            checkMiniBoss();
+
+            if (miniBoss) {
+                miniBoss.y += miniBoss.speed;
+                if(images['mini_boss']) ctx.drawImage(images['mini_boss'], miniBoss.x, miniBoss.y, miniBoss.w, miniBoss.h);
+                
+                ctx.fillStyle = 'red';
+                ctx.fillRect(miniBoss.x, miniBoss.y - 10, miniBoss.w, 5);
+                ctx.fillStyle = '#00ff00';
+                ctx.fillRect(miniBoss.x, miniBoss.y - 10, miniBoss.w * (miniBoss.hp / miniBoss.maxHp), 5);
+
+                miniBoss.shootTimer++;
+                if (miniBoss.shootTimer > 240) { // 4 секунды (240 кадров при 60fps)
+                    spawnEnemy(true, miniBoss.x + 20, miniBoss.y + 50, -2);
+                    spawnEnemy(true, miniBoss.x + 40, miniBoss.y + 50, 0);
+                    spawnEnemy(true, miniBoss.x + 60, miniBoss.y + 50, 2);
+                    miniBoss.shootTimer = 0;
+                }
+
+                for (let j = 0; j < bullets.length; j++) {
+                    let b = bullets[j];
+                    if (b.x < miniBoss.x + miniBoss.w && b.x + b.w > miniBoss.x && b.y < miniBoss.y + miniBoss.h && b.y + b.h > miniBoss.y) {
+                        miniBoss.hp--;
+                        bullets.splice(j, 1);
+                        playSound(sfxHit);
+                        if (miniBoss.hp <= 0) {
+                            playSound(sfxMiniBossDead);
+                            score += 1000;
+                            document.getElementById('score').innerText = score;
+                            explosions.push({ x: miniBoss.x, y: miniBoss.y, w: 120, h: 120, timer: 40 });
+                            miniBoss = null;
+                            nextMiniBossScore += 5000;
+                        }
+                        break;
+                    }
+                }
+                if (miniBoss && miniBoss.y > height) miniBoss = null; 
+            } else {
+                if (frames % 50 === 0) spawnEnemy();
+            }
+
+            for (let i = 0; i < enemies.length; i++) {
+                let e = enemies[i];
+                e.y += e.speed;
+                e.x += (e.dx || 0);
+                
+                // ОТСКОК ОТ СТЕН (Для миньонов)
+                if (e.dx !== 0) {
+                    if (e.x <= 0) {
+                        e.x = 0;
+                        e.dx = -e.dx;
+                    }
+                    if (e.x + e.w >= width) {
+                        e.x = width - e.w;
+                        e.dx = -e.dx;
+                    }
+                }
+
+                ctx.drawImage(e.img, e.x, e.y, e.w, e.h);
+
+                for (let j = 0; j < bullets.length; j++) {
+                    let b = bullets[j];
+                    if (b.x < e.x + e.w && b.x + b.w > e.x && b.y < e.y + e.h && b.y + b.h > e.y) {
+                        explosions.push({ x: e.x, y: e.y, w: e.w, h: e.h, timer: 30 });
+                        playSound(sfxHit);
+                        
+                        enemies.splice(i, 1);
+                        bullets.splice(j, 1);
+                        score += 100;
+                        document.getElementById('score').innerText = score;
+                        checkUlta();
+                        i--;
+                        break; 
+                    }
+                }
+                if (i >= 0) { 
+                    if (player.x < e.x + e.w && player.x + player.w > e.x && player.y < e.y + e.h && player.y + player.h > e.y) {
+                        enemies.splice(i, 1); loseLife(); i--; continue;
+                    }
+                }
+                if (i >= 0 && e.y > height) {
+                    enemies.splice(i, 1); loseLife(); i--;
+                }
+            }
+        }
+        frames++;
+        requestAnimationFrame(update);
+    }
+
+    loadImages();
+</script>
+</body>
+</html>
