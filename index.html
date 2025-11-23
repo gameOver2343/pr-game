@@ -6,34 +6,33 @@
     <title>Antivirus vs Virus</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        /* Отключаем выделение текста и зум по двойному тапу */
         body { margin: 0; overflow: hidden; background: #000; touch-action: none; user-select: none; -webkit-user-select: none; font-family: 'Courier New', Courier, monospace; }
         canvas { display: block; width: 100%; height: 100%; }
         
-        /* Общие стили */
         .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; z-index: 10; }
         .hidden { display: none !important; }
 
-        /* МЕНЮ */
         #menu-screen { background: rgba(0,0,0,0.6); }
         h1 { color: #fff; font-size: 40px; text-transform: uppercase; text-shadow: 4px 4px 0 #ff0055; margin-bottom: 10px; }
         .subtitle { color: #00ccff; font-size: 16px; margin-bottom: 40px; text-shadow: 1px 1px 0 #000; }
         
-        /* СЮЖЕТ */
         #story-screen { background: rgba(20, 0, 10, 0.95); padding: 20px; box-sizing: border-box; }
         .story-box { border: 2px solid #fff; padding: 20px; background: #000; box-shadow: 5px 5px 0 #ff0055; max-width: 90%; }
         .story-text { color: #fff; font-size: 18px; line-height: 1.5; margin-bottom: 20px; text-align: left; }
         .virus-icon { width: 80px; margin-bottom: 20px; animation: shake 0.5s infinite; }
 
-        /* ИГРОВОЙ ИНТЕРФЕЙС */
-        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none; }
+        /* Интерфейс игры */
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none; z-index: 5; }
         #score-box { position: absolute; top: 20px; left: 20px; color: #fff; font-size: 24px; font-weight: bold; text-shadow: 2px 2px 0 #ff00ff; }
         #lives-box { position: absolute; top: 20px; right: 20px; color: #ff0055; font-size: 24px; font-weight: bold; text-shadow: 2px 2px 0 #fff; letter-spacing: 5px; }
         
-        .controls { position: absolute; bottom: 30px; width: 100%; height: 100px; pointer-events: auto; display: flex; justify-content: space-between; padding: 0 20px; box-sizing: border-box; }
-        .btn-group-left { display: flex; gap: 20px; }
-        .btn-group-right { display: flex; gap: 20px; align-items: flex-end; }
+        /* КОНТРОЛЛЕРЫ (Важно: pointer-events: auto) */
+        .controls { position: absolute; bottom: 20px; width: 100%; height: 100px; pointer-events: auto; display: flex; justify-content: space-between; padding: 0 20px; box-sizing: border-box; z-index: 20; }
+        .btn-group-left { display: flex; gap: 15px; }
+        .btn-group-right { display: flex; gap: 15px; align-items: flex-end; }
         
-        .btn { width: 80px; height: 80px; background-size: contain; background-repeat: no-repeat; background-position: center; opacity: 0.8; transition: transform 0.1s; }
+        .btn { width: 80px; height: 80px; background-size: contain; background-repeat: no-repeat; background-position: center; opacity: 0.7; transition: transform 0.05s; touch-action: none; }
         .btn:active { transform: scale(0.9); opacity: 1; }
         
         #btn-left { background-image: url('img/btn_left.png'); }
@@ -55,44 +54,41 @@
         @keyframes pulse-fast { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
         @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 10% { transform: translate(-1px, -2px) rotate(-1deg); } 20% { transform: translate(-3px, 0px) rotate(1deg); } 30% { transform: translate(3px, 2px) rotate(0deg); } 40% { transform: translate(1px, -1px) rotate(1deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 60% { transform: translate(-3px, 1px) rotate(0deg); } 70% { transform: translate(3px, 1px) rotate(-1deg); } 80% { transform: translate(-1px, -1px) rotate(1deg); } 90% { transform: translate(1px, 2px) rotate(0deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
 
-        #gameover { display: none; background: rgba(0,0,0,0.9); }
+        #gameover { display: none; background: rgba(0,0,0,0.9); z-index: 30; }
     </style>
 </head>
 <body>
 
     <canvas id="gameCanvas"></canvas>
 
-    <!-- МЕНЮ -->
     <div id="menu-screen" class="screen">
         <h1>CYBER<br>DEFENSE</h1> 
         <p class="subtitle">Code by Narcissus & AI Core</p>
         <button class="main-btn" onclick="showStory()">ИГРАТЬ</button>
     </div>
 
-    <!-- СЮЖЕТ -->
     <div id="story-screen" class="screen hidden">
         <div class="story-box">
             <img src="img/boss_head.png" class="virus-icon">
             <p class="story-text">
                 ⚠ <b>ВНИМАНИЕ!</b><br><br>
-                Система кафедры заражена неизвестным вирусом.<br>
-                Твоя задача: активировать Антивирус и зачистить угрозу.
+                Система заражена.<br>
+                Активируй антивирус и зачисти угрозу.
             </p>
             <button class="main-btn" onclick="startGame()">В БОЙ!</button>
         </div>
     </div>
 
-    <!-- ИГРА -->
     <div id="ui-layer">
         <div id="score-box">SCORE: <span id="score">0</span></div>
         <div id="lives-box">❤❤❤</div>
         
+        <!-- КНОПКИ УПРАВЛЕНИЯ -->
         <div class="controls">
             <div class="btn-group-left">
                 <div id="btn-left" class="btn"></div>
                 <div id="btn-right" class="btn"></div>
             </div>
-            
             <div class="btn-group-right">
                 <div id="btn-ulta" class="btn"></div>
                 <div id="btn-fire" class="btn"></div>
@@ -100,7 +96,6 @@
         </div>
     </div>
 
-    <!-- GAME OVER -->
     <div id="gameover" class="screen">
         <h1>СИСТЕМА<br>ПАЛА</h1>
         <p style="color: #fff; font-size: 20px;">Счет: <span id="final-score">0</span></p>
@@ -120,9 +115,11 @@
     let lives = 3;
     let frames = 0;
     
+    // Состояние кнопок (Нажата или нет)
+    const keys = { left: false, right: false };
+
     let nextUltaScore = 1000; 
     let isUltaReady = false;
-
     let miniBoss = null; 
     let nextMiniBossScore = 5000; 
 
@@ -132,30 +129,21 @@
     const gameoverScreen = document.getElementById('gameover');
     const btnUlta = document.getElementById('btn-ulta');
 
-    // ЗВУКИ
+    // Аудио
     const musicMenu = new Audio('audio/music_menu.mp3'); musicMenu.loop = true;
     const musicGame = new Audio('audio/music_game.mp3'); musicGame.loop = true; musicGame.volume = 0.6;
     const sfxShoot = new Audio('audio/shoot.mp3');
-    const sfxHit = new Audio('audio/hit.mp3');
     const sfxGameOver = new Audio('audio/gameover.mp3');
     const sfxClick = new Audio('audio/knok.mp3');
     const sfxUlta = new Audio('audio/ulta.mp3');
     const sfxMiniBossDead = new Audio('audio/mini_boss.mp3');
 
     function playSound(sound) {
-        const clone = sound.cloneNode();
-        clone.volume = 0.8;
-        clone.play().catch(e => {});
+        if (sound.paused) { sound.play().catch(()=>{}); } else { sound.currentTime = 0; }
     }
 
     const images = {};
-    const imageList = [
-        'bg_game.jpg', 'boss_head.png', 'glitch_ring.png', 
-        'player.png', 'bullet.png', 
-        'enemy_1.png', 'enemy_2.png', 'enemy_3.png',
-        'trash_1.png', 'trash_2.png', 'trash_3.png',
-        'kill.png', 'ulta.png', 'mini_boss.png'
-    ];
+    const imageList = ['bg_game.jpg', 'boss_head.png', 'glitch_ring.png', 'player.png', 'bullet.png', 'enemy_1.png', 'enemy_2.png', 'enemy_3.png', 'trash_1.png', 'trash_2.png', 'trash_3.png', 'kill.png', 'ulta.png', 'mini_boss.png'];
     let imagesLoaded = 0;
 
     function loadImages() {
@@ -178,7 +166,7 @@
 
     function showStory() {
         playSound(sfxClick);
-        musicMenu.play().catch(e => console.log("Touch"));
+        musicMenu.play().catch(()=>{});
         menuScreen.classList.add('hidden');
         storyScreen.classList.remove('hidden');
         gameState = 'story';
@@ -188,85 +176,88 @@
         playSound(sfxClick);
         musicMenu.pause();
         musicMenu.currentTime = 0;
-        musicGame.play();
+        musicGame.play().catch(()=>{});
 
         storyScreen.classList.add('hidden');
         gameoverScreen.style.display = 'none'; 
         uiLayer.style.display = 'block';
         
-        score = 0;
-        lives = 3;
-        nextUltaScore = 1000; 
-        nextMiniBossScore = 5000; 
-        isUltaReady = false;
-        btnUlta.style.display = 'none';
-        miniBoss = null;
-
-        enemies = [];
-        bullets = [];
-        explosions = [];
+        score = 0; lives = 3; nextUltaScore = 1000; nextMiniBossScore = 5000; 
+        isUltaReady = false; btnUlta.style.display = 'none'; miniBoss = null;
+        enemies = []; bullets = []; explosions = [];
         player.x = width / 2 - player.w / 2;
         document.getElementById('score').innerText = "0";
         updateLivesUI();
+        
+        // Сброс нажатий
+        keys.left = false; keys.right = false;
         
         gameState = 'game';
     }
 
     function restartInstant() { startGame(); }
 
-    // ОТПРАВКА ДАННЫХ БОТУ И ВЫХОД
     function saveAndExit() {
         playSound(sfxClick);
         const data = JSON.stringify({ score: score });
-        tg.sendData(data); 
+        tg.sendData(data);
+        tg.close(); 
     }
 
     function goToMenu() {
         playSound(sfxClick);
-        musicGame.pause();
-        musicGame.currentTime = 0;
+        musicGame.pause(); musicGame.currentTime = 0;
         musicMenu.play();
         gameoverScreen.style.display = 'none';
         uiLayer.style.display = 'none';
         menuScreen.classList.remove('hidden');
-        enemies = [];
-        bullets = [];
-        explosions = [];
+        enemies = []; bullets = []; explosions = [];
         gameState = 'menu';
     }
 
-    const player = { x: 0, y: 0, w: 100, h: 60, speed: 7, dx: 0 };
+    const player = { x: 0, y: 0, w: 100, h: 60, speed: 8, dx: 0 }; // Чуть быстрее
     const boss = { angle: 0 }; 
     let bullets = [];
     let enemies = [];
     let trash = [];
     let explosions = [];
 
+    // === НОВОЕ УПРАВЛЕНИЕ (Надежное) ===
     const btnLeft = document.getElementById('btn-left');
     const btnRight = document.getElementById('btn-right');
     const btnFire = document.getElementById('btn-fire');
 
-    const addTouch = (elem, startAction, endAction) => {
-        elem.addEventListener('touchstart', (e) => { e.preventDefault(); startAction(); });
-        elem.addEventListener('touchend', (e) => { e.preventDefault(); endAction(); });
-        elem.addEventListener('mousedown', (e) => { e.preventDefault(); startAction(); });
-        elem.addEventListener('mouseup', (e) => { e.preventDefault(); endAction(); });
-    };
+    // Функция назначения событий на кнопку
+    function bindBtn(btn, actionStart, actionEnd) {
+        btn.addEventListener('touchstart', (e) => { e.preventDefault(); actionStart(); });
+        btn.addEventListener('touchend', (e) => { e.preventDefault(); actionEnd(); });
+        btn.addEventListener('mousedown', (e) => { e.preventDefault(); actionStart(); });
+        btn.addEventListener('mouseup', (e) => { e.preventDefault(); actionEnd(); });
+        btn.addEventListener('mouseleave', (e) => { e.preventDefault(); actionEnd(); });
+    }
 
-    addTouch(btnLeft, () => player.dx = -player.speed, () => player.dx = 0);
-    addTouch(btnRight, () => player.dx = player.speed, () => player.dx = 0);
-    addTouch(btnFire, () => shoot(), () => {});
-    addTouch(btnUlta, () => fireUlta(), () => {});
+    // Привязываем логику
+    bindBtn(btnLeft, () => { keys.left = true; }, () => { keys.left = false; });
+    bindBtn(btnRight, () => { keys.right = true; }, () => { keys.right = false; });
+    
+    // Огонь и Ульта - одиночные нажатия
+    btnFire.addEventListener('touchstart', (e) => { e.preventDefault(); shoot(); });
+    btnFire.addEventListener('mousedown', (e) => { e.preventDefault(); shoot(); });
+    
+    btnUlta.addEventListener('touchstart', (e) => { e.preventDefault(); fireUlta(); });
+    btnUlta.addEventListener('mousedown', (e) => { e.preventDefault(); fireUlta(); });
 
+    // Клавиатура
     window.addEventListener('keydown', e => {
         if(gameState !== 'game') return;
-        if(e.key === 'ArrowLeft') player.dx = -player.speed;
-        if(e.key === 'ArrowRight') player.dx = player.speed;
+        if(e.key === 'ArrowLeft') keys.left = true;
+        if(e.key === 'ArrowRight') keys.right = true;
         if(e.key === ' ') shoot();
         if(e.key === 'Shift') fireUlta(); 
     });
     window.addEventListener('keyup', e => {
-        if(e.key === 'ArrowLeft' || e.key === 'ArrowRight') player.dx = 0;
+        if(e.key === 'ArrowLeft') keys.left = false;
+        if(e.key === 'ArrowRight') keys.right = false;
     });
 
     function resize() {
@@ -308,51 +299,32 @@
     }
 
     function checkMiniBoss() {
-        if (score >= nextMiniBossScore && miniBoss === null) {
-            spawnMiniBoss();
-        }
+        if (score >= nextMiniBossScore && miniBoss === null) { spawnMiniBoss(); }
     }
 
     function spawnMiniBoss() {
-        miniBoss = {
-            x: width / 2 - 60,
-            y: -120,
-            w: 120, h: 120,
-            hp: 10,
-            maxHp: 10,
-            speed: 0.7,
-            shootTimer: 0
-        };
+        miniBoss = { x: width / 2 - 60, y: -120, w: 120, h: 120, hp: 10, maxHp: 10, speed: 0.7, shootTimer: 0 };
     }
 
     function spawnEnemy(isMinion = false, startX = 0, startY = 0, dirX = 0) {
         const types = ['enemy_1', 'enemy_2', 'enemy_3'];
         const type = types[Math.floor(Math.random() * types.length)];
         const size = 60;
-        
         if (isMinion) {
-            enemies.push({ 
-                img: images[type], x: startX, y: startY, w: size, h: size, 
-                speed: 4, dx: dirX 
-            });
+            enemies.push({ img: images[type], x: startX, y: startY, w: size, h: size, speed: 4, dx: dirX });
         } else {
-            enemies.push({ 
-                img: images[type], x: Math.random() * (width - size), y: -100, w: size, h: size, 
-                speed: 3 + Math.random() * 3, dx: 0 
-            });
+            enemies.push({ img: images[type], x: Math.random() * (width - size), y: -100, w: size, h: size, speed: 3 + Math.random() * 3, dx: 0 });
         }
     }
 
-    // --- МУСОР (СТАТИЧНЫЙ, БЕЗ АНИМАЦИИ) ---
     function initAtmosphere() {
         trash = [];
-        // Просто координаты, без скоростей и фаз
-        trash.push({ img: images['trash_1'], x: width * 0.1, y: height * 0.15, w: 100, h: 80 });
-        trash.push({ img: images['trash_2'], x: width * 0.65, y: height * 0.2, w: 140, h: 100 });
-        trash.push({ img: images['trash_3'], x: width * 0.05, y: height * 0.4, w: 80, h: 120 });
-        trash.push({ img: images['trash_1'], x: width * 0.75, y: height * 0.5, w: 90, h: 70 });
-        trash.push({ img: images['trash_2'], x: width * 0.15, y: height * 0.7, w: 130, h: 90 });
-        trash.push({ img: images['trash_3'], x: width * 0.6, y: height * 0.8, w: 70, h: 100 });
+        trash.push({ img: images['trash_1'], x: width * 0.1, y: height * 0.15, w: 100, h: 80, baseX: width * 0.1, baseY: height * 0.15, phase: 0, speed: 0.02, range: 10 });
+        trash.push({ img: images['trash_2'], x: width * 0.65, y: height * 0.2, w: 140, h: 100, baseX: width * 0.65, baseY: height * 0.2, phase: 2, speed: 0.015, range: 15 });
+        trash.push({ img: images['trash_3'], x: width * 0.05, y: height * 0.4, w: 80, h: 120, baseX: width * 0.05, baseY: height * 0.4, phase: 4, speed: 0.025, range: 20 });
+        trash.push({ img: images['trash_1'], x: width * 0.75, y: height * 0.5, w: 90, h: 70, baseX: width * 0.75, baseY: height * 0.5, phase: 1, speed: 0.01, range: 12 });
+        trash.push({ img: images['trash_2'], x: width * 0.15, y: height * 0.7, w: 130, h: 90, baseX: width * 0.15, baseY: height * 0.7, phase: 3, speed: 0.02, range: 10 });
+        trash.push({ img: images['trash_3'], x: width * 0.6, y: height * 0.8, w: 70, h: 100, baseX: width * 0.6, baseY: height * 0.8, phase: 5, speed: 0.015, range: 15 });
     }
 
     function updateLivesUI() {
@@ -381,10 +353,10 @@
 
         if(images['bg_game']) ctx.drawImage(images['bg_game'], 0, 0, width, height);
 
-        // Мусор (статичный)
         for (let i = 0; i < trash.length; i++) {
             let t = trash[i];
-            ctx.globalAlpha = 0.5; // Полупрозрачность
+            t.y = t.baseY + Math.sin(frames * t.speed + t.phase) * t.range;
+            ctx.globalAlpha = 0.5;
             if(t.img) ctx.drawImage(t.img, t.x, t.y, t.w, t.h);
             ctx.globalAlpha = 1.0;
         }
@@ -402,6 +374,11 @@
         }
 
         if (gameState === 'game') {
+            // ОБРАБОТКА ДВИЖЕНИЯ ИГРОКА (НОВАЯ)
+            player.dx = 0;
+            if (keys.left) player.dx = -player.speed;
+            if (keys.right) player.dx = player.speed;
+
             player.x += player.dx;
             if(player.x < 0) player.x = 0;
             if(player.x + player.w > width) player.x = width - player.w;
@@ -419,10 +396,7 @@
                 let ex = explosions[k];
                 if(images['kill']) ctx.drawImage(images['kill'], ex.x, ex.y, ex.w, ex.h);
                 ex.timer--;
-                if (ex.timer <= 0) {
-                    explosions.splice(k, 1);
-                    k--;
-                }
+                if (ex.timer <= 0) { explosions.splice(k, 1); k--; }
             }
 
             checkMiniBoss();
@@ -449,7 +423,7 @@
                     if (b.x < miniBoss.x + miniBoss.w && b.x + b.w > miniBoss.x && b.y < miniBoss.y + miniBoss.h && b.y + b.h > miniBoss.y) {
                         miniBoss.hp--;
                         bullets.splice(j, 1);
-                        playSound(sfxHit);
+                        // playSound(sfxHit);
                         if (miniBoss.hp <= 0) {
                             playSound(sfxMiniBossDead);
                             score += 1000;
@@ -482,8 +456,7 @@
                     let b = bullets[j];
                     if (b.x < e.x + e.w && b.x + b.w > e.x && b.y < e.y + e.h && b.y + b.h > e.y) {
                         explosions.push({ x: e.x, y: e.y, w: e.w, h: e.h, timer: 30 });
-                        playSound(sfxHit);
-                        
+                        // playSound(sfxHit);
                         enemies.splice(i, 1);
                         bullets.splice(j, 1);
                         score += 100;
