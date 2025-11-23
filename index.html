@@ -15,8 +15,7 @@
         #menu-screen { background: rgba(0,0,0,0.6); }
         h1 { color: #fff; font-size: 40px; text-transform: uppercase; text-shadow: 4px 4px 0 #ff0055; margin-bottom: 10px; }
         .subtitle { color: #00ccff; font-size: 16px; margin-bottom: 40px; text-shadow: 1px 1px 0 #000; }
-        .version-tag { color: #00ff00; font-size: 12px; margin-bottom: 30px; opacity: 0.7; }
-
+        
         #story-screen { background: rgba(20, 0, 10, 0.95); padding: 20px; box-sizing: border-box; }
         .story-box { border: 2px solid #fff; padding: 20px; background: #000; box-shadow: 5px 5px 0 #ff0055; max-width: 90%; }
         .story-text { color: #fff; font-size: 18px; line-height: 1.5; margin-bottom: 20px; text-align: left; }
@@ -26,9 +25,13 @@
         #score-box { position: absolute; top: 20px; left: 20px; color: #fff; font-size: 24px; font-weight: bold; text-shadow: 2px 2px 0 #ff00ff; }
         #lives-box { position: absolute; top: 20px; right: 20px; color: #ff0055; font-size: 24px; font-weight: bold; text-shadow: 2px 2px 0 #fff; letter-spacing: 5px; }
         
-        .controls { position: absolute; bottom: 20px; width: 100%; height: 100px; pointer-events: auto; display: flex; justify-content: space-between; padding: 0 20px; box-sizing: border-box; z-index: 20; }
-        .btn-group-left { display: flex; gap: 15px; }
-        .btn-group-right { display: flex; gap: 15px; align-items: flex-end; } /* Кнопка ульты убрана */
+        /* УПРАВЛЕНИЕ */
+        .controls { position: absolute; bottom: 20px; width: 100%; height: 180px; /* Увеличил высоту для двух кнопок */ pointer-events: auto; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 20px; box-sizing: border-box; z-index: 20; }
+        
+        .btn-group-left { display: flex; gap: 15px; align-items: flex-end; height: 100%; }
+        
+        /* ПРАВАЯ ГРУППА - СТОЛБИКОМ */
+        .btn-group-right { display: flex; flex-direction: column-reverse; gap: 15px; align-items: center; height: 100%; justify-content: flex-start; }
         
         .btn { width: 80px; height: 80px; background-size: contain; background-repeat: no-repeat; background-position: center; opacity: 0.7; transition: transform 0.05s; touch-action: none; }
         .btn:active { transform: scale(0.9); opacity: 1; }
@@ -37,10 +40,21 @@
         #btn-right { background-image: url('img/btn_right.png'); }
         #btn-fire { background-image: url('img/btn_fire.png'); }
         
+        /* Ульта теперь над кнопкой огня */
+        #btn-ulta { 
+            display: none; 
+            background-image: url('img/ulta.png'); 
+            width: 70px; height: 70px;
+            animation: pulse-fast 0.5s infinite;
+            filter: drop-shadow(0 0 10px #00ccff);
+            margin-bottom: 10px; /* Отступ от кнопки огня */
+        }
+
         .main-btn { padding: 15px 40px; font-size: 22px; background: #ff0055; color: #fff; border: none; cursor: pointer; font-family: inherit; font-weight: bold; text-transform: uppercase; box-shadow: 0 0 15px #ff0055; animation: pulse 1.5s infinite; margin-bottom: 20px; }
         .sub-btn { background: none; border: none; color: #aaa; font-size: 16px; cursor: pointer; text-decoration: underline; font-family: inherit; }
         
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        @keyframes pulse-fast { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
         @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 10% { transform: translate(-1px, -2px) rotate(-1deg); } 20% { transform: translate(-3px, 0px) rotate(1deg); } 30% { transform: translate(3px, 2px) rotate(0deg); } 40% { transform: translate(1px, -1px) rotate(1deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 60% { transform: translate(-3px, 1px) rotate(0deg); } 70% { transform: translate(3px, 1px) rotate(-1deg); } 80% { transform: translate(-1px, -1px) rotate(1deg); } 90% { transform: translate(1px, 2px) rotate(0deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
 
         #gameover { display: none; background: rgba(0,0,0,0.9); z-index: 30; }
@@ -52,8 +66,7 @@
 
     <div id="menu-screen" class="screen">
         <h1>CYBER<br>DEFENSE</h1> 
-        <p class="subtitle">Code by Narcissus & AI Core</p>
-        <p class="version-tag">VER 4.0 (AUTO-ULTA)</p> 
+        <p class="subtitle">Code by Timur Zacharzhevskiy & Gemini</p>
         <button class="main-btn" onclick="showStory()">ИГРАТЬ</button>
     </div>
 
@@ -77,9 +90,10 @@
                 <div id="btn-left" class="btn"></div>
                 <div id="btn-right" class="btn"></div>
             </div>
+            <!-- ПРАВАЯ ГРУППА (Вертикальная) -->
             <div class="btn-group-right">
-                <!-- Кнопки ульты нет, только огонь -->
                 <div id="btn-fire" class="btn"></div>
+                <div id="btn-ulta" class="btn"></div>
             </div>
         </div>
     </div>
@@ -106,6 +120,7 @@
     const keys = { left: false, right: false };
 
     let nextUltaScore = 1000; 
+    let isUltaReady = false;
     let miniBoss = null; 
     let nextMiniBossScore = 5000; 
 
@@ -113,24 +128,34 @@
     const storyScreen = document.getElementById('story-screen');
     const uiLayer = document.getElementById('ui-layer');
     const gameoverScreen = document.getElementById('gameover');
+    const btnUlta = document.getElementById('btn-ulta');
 
+    // АУДИО
     const musicMenu = new Audio('audio/music_menu.mp3'); musicMenu.loop = true;
     const musicGame = new Audio('audio/music_game.mp3'); musicGame.loop = true; musicGame.volume = 0.6;
+    const sfxShoot = new Audio('audio/shoot.mp3');
     const sfxGameOver = new Audio('audio/gameover.mp3');
     const sfxClick = new Audio('audio/knok.mp3');
+    const sfxUlta = new Audio('audio/ulta.mp3');
     const sfxMiniBossDead = new Audio('audio/mini_boss.mp3');
 
-    function playSound(sound) { if (sound.paused) { sound.play().catch(()=>{}); } else { sound.currentTime = 0; } }
+    function playSound(sound) {
+        if (sound.paused) { sound.play().catch(()=>{}); } else { sound.currentTime = 0; }
+    }
 
     const images = {};
-    const imageList = ['bg_game.jpg', 'boss_head.png', 'glitch_ring.png', 'player.png', 'bullet.png', 'enemy_1.png', 'enemy_2.png', 'enemy_3.png', 'trash_1.png', 'trash_2.png', 'trash_3.png', 'kill.png', 'mini_boss.png'];
+    const imageList = ['bg_game.jpg', 'boss_head.png', 'glitch_ring.png', 'player.png', 'bullet.png', 'enemy_1.png', 'enemy_2.png', 'enemy_3.png', 'trash_1.png', 'trash_2.png', 'trash_3.png', 'kill.png', 'ulta.png', 'mini_boss.png'];
     let imagesLoaded = 0;
 
     function loadImages() {
         imageList.forEach(name => {
             const img = new Image();
             img.src = 'img/' + name;
-            img.onload = () => { images[name.split('.')[0]] = img; imagesLoaded++; if (imagesLoaded === imageList.length) initGame(); };
+            img.onload = () => {
+                images[name.split('.')[0]] = img; 
+                imagesLoaded++;
+                if (imagesLoaded === imageList.length) initGame();
+            };
         });
     }
 
@@ -150,17 +175,22 @@
 
     function startGame() {
         playSound(sfxClick);
-        musicMenu.pause(); musicMenu.currentTime = 0;
+        musicMenu.pause();
+        musicMenu.currentTime = 0;
         musicGame.play().catch(()=>{});
+
         storyScreen.classList.add('hidden');
         gameoverScreen.style.display = 'none'; 
         uiLayer.style.display = 'block';
-        score = 0; lives = 3; nextUltaScore = 1000; nextMiniBossScore = 5000; miniBoss = null;
+        
+        score = 0; lives = 3; nextUltaScore = 1000; nextMiniBossScore = 5000; 
+        isUltaReady = false; btnUlta.style.display = 'none'; miniBoss = null;
         enemies = []; bullets = []; explosions = [];
         player.x = width / 2 - player.w / 2;
         document.getElementById('score').innerText = "0";
         updateLivesUI();
         keys.left = false; keys.right = false;
+        
         gameState = 'game';
     }
 
@@ -170,7 +200,7 @@
         playSound(sfxClick);
         const data = JSON.stringify({ score: score });
         tg.sendData(data);
-        setTimeout(() => { tg.close(); }, 100);
+        tg.close(); 
     }
 
     function goToMenu() {
@@ -208,12 +238,17 @@
     
     btnFire.addEventListener('touchstart', (e) => { e.preventDefault(); shoot(); });
     btnFire.addEventListener('mousedown', (e) => { e.preventDefault(); shoot(); });
+    
+    // УЛЬТА - Нажатие
+    btnUlta.addEventListener('touchstart', (e) => { e.preventDefault(); fireUlta(); });
+    btnUlta.addEventListener('mousedown', (e) => { e.preventDefault(); fireUlta(); });
 
     window.addEventListener('keydown', e => {
         if(gameState !== 'game') return;
         if(e.key === 'ArrowLeft') keys.left = true;
         if(e.key === 'ArrowRight') keys.right = true;
         if(e.key === ' ') shoot();
+        if(e.key === 'Shift') fireUlta(); 
     });
     window.addEventListener('keyup', e => {
         if(e.key === 'ArrowLeft') keys.left = false;
@@ -236,17 +271,24 @@
         tg.HapticFeedback.impactOccurred('light');
     }
 
-    // --- АВТО-УЛЬТА ---
     function checkUlta() {
-        if (score >= nextUltaScore) {
-            fireUlta();
-            nextUltaScore += 1000; // Следующая ульта через 1000
+        if (score >= nextUltaScore && !isUltaReady) {
+            isUltaReady = true;
+            btnUlta.style.display = 'block'; // Показываем кнопку
+            tg.HapticFeedback.notificationOccurred('success');
         }
     }
 
     function fireUlta() {
-        tg.HapticFeedback.notificationOccurred('success'); // Вибрация
-        // Веерный залп
+        if (!isUltaReady) return;
+        
+        // Звук убрали для скорости, оставили вибрацию
+        tg.HapticFeedback.notificationOccurred('heavy');
+        
+        isUltaReady = false;
+        btnUlta.style.display = 'none'; // Прячем кнопку
+        nextUltaScore += 1000; 
+        
         for (let i = 0; i < 10; i++) {
             let angle = -0.5 + (i / 9) * 1.0;
             bullets.push({ x: player.x + player.w/2 - 15, y: player.y, w: 30, h: 30, dx: Math.sin(angle) * 8, dy: -12 });
