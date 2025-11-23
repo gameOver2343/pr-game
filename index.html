@@ -106,7 +106,7 @@
 
     // Настройки стрельбы
     let lastShotTime = 0;
-    const shootDelay = 250; 
+    const shootDelay = 300; 
 
     let nextUltaScore = 1000; 
     let miniBoss = null; 
@@ -400,7 +400,7 @@
                 }
                 if (miniBoss && miniBoss.y > height) miniBoss = null; 
             } else {
-                if (frames % 50 === 0) spawnEnemy();
+                if (frames % 40 === 0) spawnEnemy();
             }
 
             for (let i = 0; i < enemies.length; i++) {
