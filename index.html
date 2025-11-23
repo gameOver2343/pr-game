@@ -28,7 +28,7 @@
         
         .controls { position: absolute; bottom: 20px; width: 100%; height: 100px; pointer-events: auto; display: flex; justify-content: space-between; padding: 0 20px; box-sizing: border-box; z-index: 20; }
         .btn-group-left { display: flex; gap: 15px; }
-        .btn-group-right { display: flex; gap: 15px; align-items: flex-end; } /* Кнопка ульты убрана */
+        .btn-group-right { display: flex; gap: 15px; align-items: flex-end; }
         
         .btn { width: 80px; height: 80px; background-size: contain; background-repeat: no-repeat; background-position: center; opacity: 0.7; transition: transform 0.05s; touch-action: none; }
         .btn:active { transform: scale(0.9); opacity: 1; }
@@ -77,17 +77,17 @@
                 <div id="btn-right" class="btn"></div>
             </div>
             <div class="btn-group-right">
-                <!-- Кнопки ульты нет, только огонь -->
                 <div id="btn-fire" class="btn"></div>
             </div>
         </div>
     </div>
 
     <div id="gameover" class="screen">
-        <h1>СИСТЕМА<br>ПАЛА</h1>
+        <h1>СИСТЕМА<br>ЗАРАЖЕНА</h1>
         <p style="color: #fff; font-size: 20px;">Счет: <span id="final-score">0</span></p>
         <button class="main-btn" onclick="restartInstant()">ИГРАТЬ СНОВА</button>
-        <button class="sub-btn" onclick="saveAndExit()">💾 Сохранить и Выйти</button>
+        <!-- Поменял текст кнопки -->
+        <button class="sub-btn" onclick="saveAndExit()">Выйти из игры</button>
     </div>
 
 <script>
@@ -104,6 +104,10 @@
     
     const keys = { left: false, right: false };
 
+    // Настройки стрельбы
+    let lastShotTime = 0;
+    const shootDelay = 250; 
+
     let nextUltaScore = 1000; 
     let miniBoss = null; 
     let nextMiniBossScore = 5000; 
@@ -117,12 +121,13 @@
     const musicGame = new Audio('audio/music_game.mp3'); musicGame.loop = true; musicGame.volume = 0.6;
     const sfxGameOver = new Audio('audio/gameover.mp3');
     const sfxClick = new Audio('audio/knok.mp3');
+    const sfxUlta = new Audio('audio/ulta.mp3');
     const sfxMiniBossDead = new Audio('audio/mini_boss.mp3');
 
     function playSound(sound) { if (sound.paused) { sound.play().catch(()=>{}); } else { sound.currentTime = 0; } }
 
     const images = {};
-    const imageList = ['bg_game.jpg', 'boss_head.png', 'glitch_ring.png', 'player.png', 'bullet.png', 'enemy_1.png', 'enemy_2.png', 'enemy_3.png', 'trash_1.png', 'trash_2.png', 'trash_3.png', 'kill.png', 'mini_boss.png'];
+    const imageList = ['bg_game.jpg', 'boss_head.png', 'glitch_ring.png', 'player.png', 'bullet.png', 'enemy_1.png', 'enemy_2.png', 'enemy_3.png', 'trash_1.png', 'trash_2.png', 'trash_3.png', 'kill.png', 'ulta.png', 'mini_boss.png'];
     let imagesLoaded = 0;
 
     function loadImages() {
@@ -149,7 +154,8 @@
 
     function startGame() {
         playSound(sfxClick);
-        musicMenu.pause(); musicMenu.currentTime = 0;
+        musicMenu.pause();
+        musicMenu.currentTime = 0;
         musicGame.play().catch(()=>{});
         storyScreen.classList.add('hidden');
         gameoverScreen.style.display = 'none'; 
@@ -213,6 +219,7 @@
         if(e.key === 'ArrowLeft') keys.left = true;
         if(e.key === 'ArrowRight') keys.right = true;
         if(e.key === ' ') shoot();
+        if(e.key === 'Shift') fireUlta(); 
     });
     window.addEventListener('keyup', e => {
         if(e.key === 'ArrowLeft') keys.left = false;
@@ -231,21 +238,25 @@
 
     function shoot() {
         if(gameState !== 'game') return;
+        
+        const now = Date.now();
+        if (now - lastShotTime < shootDelay) return; 
+        lastShotTime = now;
+
         bullets.push({ x: player.x + player.w/2 - 15, y: player.y, w: 30, h: 30, dx: 0, dy: -10 });
         tg.HapticFeedback.impactOccurred('light');
     }
 
-    // --- АВТО-УЛЬТА ---
     function checkUlta() {
         if (score >= nextUltaScore) {
             fireUlta();
-            nextUltaScore += 1000; // Следующая ульта через 1000
+            nextUltaScore += 1000;
         }
     }
 
     function fireUlta() {
-        tg.HapticFeedback.notificationOccurred('success'); // Вибрация
-        // Веерный залп
+        // playSound(sfxUlta);
+        tg.HapticFeedback.notificationOccurred('success');
         for (let i = 0; i < 10; i++) {
             let angle = -0.5 + (i / 9) * 1.0;
             bullets.push({ x: player.x + player.w/2 - 15, y: player.y, w: 30, h: 30, dx: Math.sin(angle) * 8, dy: -12 });
@@ -363,7 +374,8 @@
                 ctx.fillRect(miniBoss.x, miniBoss.y - 10, miniBoss.w * (miniBoss.hp / miniBoss.maxHp), 5);
 
                 miniBoss.shootTimer++;
-                if (miniBoss.shootTimer > 240) {
+                // 180 кадров = 3 секунды при 60 fps
+                if (miniBoss.shootTimer > 180) {
                     spawnEnemy(true, miniBoss.x + 20, miniBoss.y + 50, -2);
                     spawnEnemy(true, miniBoss.x + 40, miniBoss.y + 50, 0);
                     spawnEnemy(true, miniBoss.x + 60, miniBoss.y + 50, 2);
