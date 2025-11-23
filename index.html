@@ -6,7 +6,6 @@
     <title>Antivirus vs Virus</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* Отключаем все лишнее у браузера */
         body { margin: 0; overflow: hidden; background: #000; touch-action: none; user-select: none; -webkit-user-select: none; font-family: 'Courier New', Courier, monospace; }
         canvas { display: block; width: 100%; height: 100%; }
         
@@ -26,7 +25,6 @@
         #score-box { position: absolute; top: 20px; left: 20px; color: #fff; font-size: 24px; font-weight: bold; text-shadow: 2px 2px 0 #ff00ff; }
         #lives-box { position: absolute; top: 20px; right: 20px; color: #ff0055; font-size: 24px; font-weight: bold; text-shadow: 2px 2px 0 #fff; letter-spacing: 5px; }
         
-        /* Контроллеры */
         .controls { position: absolute; bottom: 20px; width: 100%; height: 100px; pointer-events: auto; display: flex; justify-content: space-between; padding: 0 20px; box-sizing: border-box; z-index: 20; }
         .btn-group-left { display: flex; gap: 15px; }
         .btn-group-right { display: flex; gap: 15px; align-items: flex-end; }
@@ -94,7 +92,7 @@
     </div>
 
     <div id="gameover" class="screen">
-        <h1>СИСТЕМА<br>ЗАРАЖЕНА</h1>
+        <h1>СИСТЕМА<br>ПАЛА</h1>
         <p style="color: #fff; font-size: 20px;">Счет: <span id="final-score">0</span></p>
         <button class="main-btn" onclick="restartInstant()">ИГРАТЬ СНОВА</button>
         <button class="sub-btn" onclick="saveAndExit()">💾 Сохранить и Выйти</button>
@@ -112,7 +110,6 @@
     let lives = 3;
     let frames = 0;
     
-    // Управление
     const keys = { left: false, right: false };
 
     let nextUltaScore = 1000; 
@@ -126,9 +123,10 @@
     const gameoverScreen = document.getElementById('gameover');
     const btnUlta = document.getElementById('btn-ulta');
 
-    // Аудио (Оставил только музыку и редкие звуки)
+    // АУДИО (Оптимизированное)
     const musicMenu = new Audio('audio/music_menu.mp3'); musicMenu.loop = true;
     const musicGame = new Audio('audio/music_game.mp3'); musicGame.loop = true; musicGame.volume = 0.6;
+    const sfxShoot = new Audio('audio/shoot.mp3');
     const sfxGameOver = new Audio('audio/gameover.mp3');
     const sfxClick = new Audio('audio/knok.mp3');
     const sfxUlta = new Audio('audio/ulta.mp3');
@@ -220,6 +218,7 @@
     const btnRight = document.getElementById('btn-right');
     const btnFire = document.getElementById('btn-fire');
 
+    // УПРАВЛЕНИЕ (Мультитач)
     function bindBtn(btn, actionStart, actionEnd) {
         btn.addEventListener('touchstart', (e) => { e.preventDefault(); actionStart(); });
         btn.addEventListener('touchend', (e) => { e.preventDefault(); actionEnd(); });
@@ -261,8 +260,9 @@
 
     function shoot() {
         if(gameState !== 'game') return;
+        // 👇 ВЕРНУЛ DX/DY для пуль (Чтобы ульта летела веером)
         bullets.push({ x: player.x + player.w/2 - 15, y: player.y, w: 30, h: 30, dx: 0, dy: -10 });
-        // playSound(sfxShoot); -- УБРАЛИ ДЛЯ СКОРОСТИ
+        // Звук выстрела отключен для оптимизации
         tg.HapticFeedback.impactOccurred('light');
     }
 
@@ -283,6 +283,7 @@
         nextUltaScore += 1000; 
         for (let i = 0; i < 10; i++) {
             let angle = -0.5 + (i / 9) * 1.0;
+            // 👇 ВОТ ЗДЕСЬ ВЕЕР: Используем dx и dy
             bullets.push({ x: player.x + player.w/2 - 15, y: player.y, w: 30, h: 30, dx: Math.sin(angle) * 8, dy: -12 });
         }
     }
@@ -308,7 +309,7 @@
 
     function initAtmosphere() {
         trash = [];
-        // СТАТИЧНЫЙ МУСОР (БЕЗ ДВИЖЕНИЯ)
+        // Статичный мусор
         trash.push({ img: images['trash_1'], x: width * 0.1, y: height * 0.15, w: 100, h: 80 });
         trash.push({ img: images['trash_2'], x: width * 0.65, y: height * 0.2, w: 140, h: 100 });
         trash.push({ img: images['trash_3'], x: width * 0.05, y: height * 0.4, w: 80, h: 120 });
@@ -343,7 +344,6 @@
 
         if(images['bg_game']) ctx.drawImage(images['bg_game'], 0, 0, width, height);
 
-        // Мусор (Статичный)
         for (let i = 0; i < trash.length; i++) {
             let t = trash[i];
             ctx.globalAlpha = 0.5;
@@ -351,7 +351,6 @@
             ctx.globalAlpha = 1.0;
         }
 
-        // Босс (Крутится только кольцо)
         if(images['boss_head'] && images['glitch_ring']) {
             boss.angle += 0.02;
             ctx.save();
@@ -376,6 +375,7 @@
 
             for (let i = 0; i < bullets.length; i++) {
                 let b = bullets[i];
+                // 👇 ТУТ ВАЖНОЕ ИСПРАВЛЕНИЕ: Добавляем dx и dy
                 b.y += b.dy; 
                 b.x += b.dx; 
                 if(images['bullet']) ctx.drawImage(images['bullet'], b.x, b.y, b.w, b.h);
