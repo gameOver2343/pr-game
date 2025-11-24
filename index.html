@@ -106,9 +106,9 @@
 
     // Настройки стрельбы
     let lastShotTime = 0;
-    const shootDelay = 300; 
+    const shootDelay = 280; 
 
-    let nextUltaScore = 1000; 
+    let nextUltaScore = 900; 
     let miniBoss = null; 
     let nextMiniBossScore = 5000; 
 
@@ -160,7 +160,7 @@
         storyScreen.classList.add('hidden');
         gameoverScreen.style.display = 'none'; 
         uiLayer.style.display = 'block';
-        score = 0; lives = 3; nextUltaScore = 1000; nextMiniBossScore = 5000; miniBoss = null;
+        score = 0; lives = 3; nextUltaScore = 900; nextMiniBossScore = 5000; miniBoss = null;
         enemies = []; bullets = []; explosions = [];
         player.x = width / 2 - player.w / 2;
         document.getElementById('score').innerText = "0";
@@ -250,7 +250,7 @@
     function checkUlta() {
         if (score >= nextUltaScore) {
             fireUlta();
-            nextUltaScore += 1000;
+            nextUltaScore += 900;
         }
     }
 
@@ -376,9 +376,9 @@
                 miniBoss.shootTimer++;
                 // 180 кадров = 3 секунды при 60 fps
                 if (miniBoss.shootTimer > 180) {
-                    spawnEnemy(true, miniBoss.x + 20, miniBoss.y + 50, -2);
+                    spawnEnemy(true, miniBoss.x + 20, miniBoss.y + 50, -4);
                     spawnEnemy(true, miniBoss.x + 40, miniBoss.y + 50, 0);
-                    spawnEnemy(true, miniBoss.x + 60, miniBoss.y + 50, 2);
+                    spawnEnemy(true, miniBoss.x + 60, miniBoss.y + 50, 4);
                     miniBoss.shootTimer = 0;
                 }
 
@@ -387,10 +387,16 @@
                     if (b.x < miniBoss.x + miniBoss.w && b.x + b.w > miniBoss.x && b.y < miniBoss.y + miniBoss.h && b.y + b.h > miniBoss.y) {
                         miniBoss.hp--;
                         bullets.splice(j, 1);
-                        if (miniBoss.hp <= 0) {
+                       if (miniBoss.hp <= 0) {
                             playSound(sfxMiniBossDead);
                             score += 1000;
                             document.getElementById('score').innerText = score;
+
+                            // 👇👇👇 ВСТАВЛЯЙ СЮДА 👇👇👇
+                            if (lives < 4) lives++; // Добавляем жизнь (максимум до 3)
+                            updateLivesUI();        // Обновляем сердечки на экране
+                            // 👆👆👆 КОНЕЦ ВСТАВКИ 👆👆👆
+
                             explosions.push({ x: miniBoss.x, y: miniBoss.y, w: 120, h: 120, timer: 40 });
                             miniBoss = null;
                             nextMiniBossScore += 5000;
